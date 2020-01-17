@@ -8,20 +8,46 @@
 
 import Cocoa
 
-class ViewController: NSViewController {
+class ViewController: NSViewController, NSTextViewDelegate {
 
+    @IBOutlet weak var textField:NSTextField!
+    
     override func viewDidLoad() {
         super.viewDidLoad()
-
-        // Do any additional setup after loading the view.
     }
 
+    override func viewWillAppear() {
+        super.viewWillAppear()
+        
+        if let sd = document?.content.savedDate {
+            textField.stringValue = sd.description
+        }
+    }
+    
     override var representedObject: Any? {
         didSet {
-        // Update the view, if already loaded.
+            for child in children {
+                child.representedObject = representedObject
+            }
         }
     }
 
+    //↓different from Apple's sample code
+    weak var document: Document? {
+        if let doc = self.view.window?.windowController?.document as? Document {
+            return doc
+        }
+        return nil
+    }
 
+    // MARK: - NSTextViewDelegate
+    
+    func textDidBeginEditing(_ notification: Notification) {
+        document?.objectDidBeginEditing(self)
+    }
+    
+    func textDidEndEditing(_ notification: Notification) {
+        document?.objectDidEndEditing(self)
+    }
 }
 

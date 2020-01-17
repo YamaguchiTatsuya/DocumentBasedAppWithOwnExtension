@@ -10,32 +10,61 @@ import Cocoa
 
 class Document: NSDocument {
 
+    @objc var content = Content(contentString: "")
+    
+    var contentViewController: ViewController!
+    
     override init() {
         super.init()
-        // Add your subclass-specific initialization here.
     }
 
     override class var autosavesInPlace: Bool {
         return true
     }
 
+    // This enables asynchronous-writing.
+    override func canAsynchronouslyWrite(to url: URL, ofType typeName: String, for saveOperation: NSDocument.SaveOperationType) -> Bool {
+        return true
+    }
+    
+    override class func canConcurrentlyReadDocuments(ofType: String) -> Bool {
+        return true
+    }
+    
+    //MARK: -
+    
     override func makeWindowControllers() {
         // Returns the Storyboard that contains your Document window.
         let storyboard = NSStoryboard(name: NSStoryboard.Name("Main"), bundle: nil)
         let windowController = storyboard.instantiateController(withIdentifier: NSStoryboard.SceneIdentifier("Document Window Controller")) as! NSWindowController
         self.addWindowController(windowController)
-    }
-
-    override func data(ofType typeName: String) throws -> Data {
-        // Insert code here to write your document to data of the specified type, throwing an error in case of failure.
-        // Alternatively, you could remove this method and override fileWrapper(ofType:), write(to:ofType:), or write(to:ofType:for:originalContentsURL:) instead.
-        throw NSError(domain: NSOSStatusErrorDomain, code: unimpErr, userInfo: nil)
+        
+        if let contentVC = windowController.contentViewController as? ViewController {
+            contentVC.representedObject = content
+            contentViewController = contentVC
+        }
     }
 
     override func read(from data: Data, ofType typeName: String) throws {
-        // Insert code here to read your document from the given data of the specified type, throwing an error in case of failure.
-        // Alternatively, you could remove this method and override read(from:ofType:) instead.
-        // If you do, you should also override isEntireFileLoaded to return false if the contents are lazily loaded.
+        
+        let classes = [Content.self, NSDate.self]
+        
+        let tempContent = try NSKeyedUnarchiver.unarchivedObject(ofClasses: classes, from: data) as! Content
+        self.content = tempContent
+    }
+
+    override func data(ofType typeName: String) throws -> Data {
+
+        // make saved date here
+        content.savedDate = Date()
+        
+        do {
+            let data = try NSKeyedArchiver.archivedData(withRootObject: content, requiringSecureCoding: true)
+            return data
+        } catch {
+            Swift.print(error)
+        }
+        
         throw NSError(domain: NSOSStatusErrorDomain, code: unimpErr, userInfo: nil)
     }
 
