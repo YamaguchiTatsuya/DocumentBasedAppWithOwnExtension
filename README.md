@@ -2,6 +2,7 @@
 
 This is a minimum sample code for document-based application with own extension in macOS.
 
+![screenshot](screenshot.png)
 
 ## Description
 
